@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Errors.hpp"
+#include "errors.hpp"
 #include <stdexcept>
 #include <utility>
 

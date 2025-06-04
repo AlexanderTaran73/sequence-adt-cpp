@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <stdexcept>
-#include "Errors.hpp"
+#include "errors.hpp"
 
 template <class T>
 class DynamicArray {

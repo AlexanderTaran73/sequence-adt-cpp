@@ -1,33 +1,40 @@
 #include <iostream>
 #include <functional>
 #include <string>
+#include <sstream>
 #include <memory>
 #include <limits>
 
-#include "MutableArraySequence.hpp"
-#include "ImmutableArraySequence.hpp"
-#include "MutableListSequence.hpp"
-#include "ImmutableListSequence.hpp"
+#include "mutable_array_sequence.hpp"
+#include "immutable_array_sequence.hpp"
+#include "mutable_list_sequence.hpp"
+#include "immutable_list_sequence.hpp"
 
 bool safeReadInt(int& val) {
-    std::cin >> val;
-    if (std::cin.fail() || std::cin) {
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        return false;
+    std::string line;
+    std::getline(std::cin, line);
+
+    std::stringstream ss(line);
+    if ((ss >> val) && ss.eof()) {
+        return true;
     }
-    return true;
+
+    return false;
 }
 
+
 bool safeReadDouble(double& val) {
-    std::cin >> val;
-    if (std::cin.fail()) {
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        return false;
+    std::string line;
+    std::getline(std::cin, line);
+
+    std::stringstream ss(line);
+    if ((ss >> val) && ss.eof()) {
+        return true;
     }
-    return true;
+
+    return false;
 }
+
 
 void safeReadString(std::string& val) {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');

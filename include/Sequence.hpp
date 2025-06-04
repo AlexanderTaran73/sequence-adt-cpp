@@ -27,7 +27,6 @@ public:
     virtual Sequence<T>* where(std::function<bool(T)> predicate) const = 0;
     virtual T reduce(std::function<T(T, T)> func, T initial) const = 0;
     virtual Sequence<T>* zip(const Sequence<T>* other, std::function<T(T, T)> combiner) const = 0;
-    // virtual Sequence<Sequence<T>*>* split(std::function<bool(T)> condition) const = 0;
     virtual Sequence<T>* slice(int startIndex, int endIndex) const = 0;
 
     virtual T& operator[](int index) = 0;

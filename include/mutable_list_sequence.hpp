@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Sequence.hpp"
-#include "LinkedList.hpp"
+#include "sequence.hpp"
+#include "linked_list.hpp"
 
 #include <functional>
 #include <stdexcept>
@@ -147,22 +147,7 @@ public:
             result.append(combiner(get(i), other->get(i)));
         return new MutableListSequence<T>(result);
     }
-
-    // Sequence<Sequence<T>*>* split(std::function<bool(T)> condition) const override {
-    //     auto* result = new MutableListSequence<Sequence<T>*>();
-    //     int start = 0;
-    //     for (int i = 0; i < getLength(); ++i) {
-    //         if (condition(get(i))) {
-    //             if (i > start)
-    //                 result->append(getSubsequence(start, i - 1));
-    //             start = i + 1;
-    //         }
-    //     }
-    //     if (start < getLength())
-    //         result->append(getSubsequence(start, getLength() - 1));
-    //     return result;
-    // }
-
+    
     Sequence<T>* slice(int start, int end) const override {
         if (start < 0) start = 0;
         if (end > getLength()) end = getLength();

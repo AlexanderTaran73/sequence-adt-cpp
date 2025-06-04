@@ -1,3 +1,5 @@
+CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -g -O0 -fsanitize=address
+LDFLAGS = -fsanitize=address
 # Компилятор
 CXX = g++
 # Флаги компиляции (C++17, все предупреждения, оптимизация)
@@ -7,27 +9,40 @@ CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -O2
 INCLUDE_DIR = include
 CLI_DIR = cli
 BIN_DIR = bin
+TESTS_DIR = tests
 
-# Исходный файл и целевой исполняемый файл
+# Исходные файлы и цели
 SRC = $(CLI_DIR)/main_cli.cpp
 TARGET = $(BIN_DIR)/cli.exe
+
+# Тестовые файлы
+TEST_SRCS = $(wildcard $(TESTS_DIR)/*.cpp)
+TEST_TARGET = $(BIN_DIR)/tests
 
 # Правило по умолчанию — сборка
 all: $(TARGET)
 
-# Создание директории bin, если её нет
+# Создание директорий
 $(shell mkdir -p $(BIN_DIR))
 
-# Компиляция
+# Основная сборка
 $(TARGET): $(SRC)
+	$(CXX) $(CXXFLAGS) -I$(INCLUDE_DIR) $^ -o $@
+
+# Сборка тестов
+$(TEST_TARGET): $(TEST_SRCS)
 	$(CXX) $(CXXFLAGS) -I$(INCLUDE_DIR) $^ -o $@
 
 # Запуск программы
 run: $(TARGET)
 	./$(TARGET)
 
+# Запуск тестов
+test: $(TEST_TARGET)
+	./$(TEST_TARGET)
+
 # Очистка
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(TEST_TARGET)
 
-.PHONY: all clean run
+.PHONY: all clean run test
