@@ -1,8 +1,6 @@
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -g -O0 -fsanitize=address
 LDFLAGS = -fsanitize=address
-# Компилятор
 CXX = g++
-# Флаги компиляции (C++17, все предупреждения, оптимизация)
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -O2
 
 # Директории

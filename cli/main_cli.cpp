@@ -249,7 +249,7 @@ public:
                     case 0: return;
                     default: std::cout << "Invalid option\n";
                 }
-            } catch (const std::exception& e) {
+            } catch (const BaseError& e) {
                 std::cout << "[Error] " << e.what() << "\n";
             } catch (...) {
                 std::cout << "[Unknown Error] Something went wrong.\n";

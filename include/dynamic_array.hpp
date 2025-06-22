@@ -9,7 +9,6 @@ class DynamicArray {
 private:
     T* data;
     int size;
-    int capacity;
 
 public:
     DynamicArray(int size);
@@ -24,10 +23,8 @@ public:
     void set(int index, T value);
 
     int getSize() const;
-    int getCapacity() const;
 
     void resize(int newSize);
-    void ensureCapacity(int newCapacity);
     void remove(int index);
     void clear();
 
@@ -46,33 +43,29 @@ template <class T>
 DynamicArray<T>::DynamicArray(int size) {
     if (size < 0) throw Errors::negativeSize();
     this->size = size;
-    capacity = size;
-    data = new T[capacity];
+    data = new T[size];
 }
 
 template <class T>
 DynamicArray<T>::DynamicArray(T* items, int count) {
     if (count < 0) throw Errors::negativeCount();
     size = count;
-    capacity = count;
-    data = new T[capacity];
+    data = new T[size];
     std::copy(items, items + size, data);
 }
 
 template <class T>
 DynamicArray<T>::DynamicArray(const DynamicArray<T>& other) {
     size = other.size;
-    capacity = other.capacity;
-    data = new T[capacity];
+    data = new T[size];
     std::copy(other.data, other.data + size, data);
 }
 
 template <class T>
 DynamicArray<T>::DynamicArray(DynamicArray<T>&& other) noexcept
-    : data(other.data), size(other.size), capacity(other.capacity) {
+    : data(other.data), size(other.size) {
     other.data = nullptr;
     other.size = 0;
-    other.capacity = 0;
 }
 
 template <class T>
@@ -80,8 +73,7 @@ DynamicArray<T>& DynamicArray<T>::operator=(const DynamicArray<T>& other) {
     if (this != &other) {
         delete[] data;
         size = other.size;
-        capacity = other.capacity;
-        data = new T[capacity];
+        data = new T[size];
         std::copy(other.data, other.data + size, data);
     }
     return *this;
@@ -93,11 +85,9 @@ DynamicArray<T>& DynamicArray<T>::operator=(DynamicArray<T>&& other) noexcept {
         delete[] data;
         data = other.data;
         size = other.size;
-        capacity = other.capacity;
 
         other.data = nullptr;
         other.size = 0;
-        other.capacity = 0;
     }
     return *this;
 }
@@ -128,29 +118,16 @@ int DynamicArray<T>::getSize() const {
 }
 
 template <class T>
-int DynamicArray<T>::getCapacity() const {
-    return capacity;
-}
-
-template <class T>
-void DynamicArray<T>::ensureCapacity(int newCapacity) {
-    if (newCapacity < 0)
-        throw Errors::negativeSize();
-    if (newCapacity <= capacity)
-        return;
-
-    T* newData = new T[newCapacity];
-    std::copy(data, data + size, newData);
-    delete[] data;
-    data = newData;
-    capacity = newCapacity;
-}
-
-template <class T>
 void DynamicArray<T>::resize(int newSize) {
     if (newSize < 0)
         throw Errors::negativeSize();
-    ensureCapacity(newSize);
+    if (newSize <= size)
+        return;
+
+    T* newData = new T[newSize];
+    std::copy(data, data + size, newData);
+    delete[] data;
+    data = newData;
     size = newSize;
 }
 

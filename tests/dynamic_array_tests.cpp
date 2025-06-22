@@ -5,7 +5,6 @@ TEST_CASE("DynamicArray Constructors", "[DynamicArray]") {
     SECTION("Default constructor") {
         DynamicArray<int> arr(5);
         REQUIRE(arr.getSize() == 5);
-        REQUIRE(arr.getCapacity() >= 5);
     }
 
     SECTION("Array constructor") {
@@ -50,9 +49,8 @@ TEST_CASE("DynamicArray Operations", "[DynamicArray]") {
         REQUIRE_THROWS_WITH(arr.get(3), Catch::Matchers::Contains("Index out of range"));
     }
 
-    SECTION("Size and capacity") {
+    SECTION("Size") {
         REQUIRE(arr.getSize() == 3);
-        REQUIRE(arr.getCapacity() >= 3);
     }
 
     SECTION("Resize operations") {
@@ -60,8 +58,7 @@ TEST_CASE("DynamicArray Operations", "[DynamicArray]") {
         REQUIRE(arr.getSize() == 5);
         
         arr.resize(2);
-        REQUIRE(arr.getSize() == 2);
-        REQUIRE_THROWS_WITH(arr[2], Catch::Matchers::Contains("Index out of range"));
+        REQUIRE(arr.getSize() == 5);
     }
 
     SECTION("Modification methods") {
@@ -140,27 +137,25 @@ TEST_CASE("DynamicArray Operators", "[DynamicArray]") {
     }
 }
 
-TEST_CASE("DynamicArray Capacity Management", "[DynamicArray]") {
+TEST_CASE("DynamicArray size Management", "[DynamicArray]") {
     DynamicArray<int> arr(0);
     
-    SECTION("Initial capacity") {
-        REQUIRE(arr.getCapacity() == 0);
+    SECTION("Initial size") {
+        REQUIRE(arr.getSize() == 0);
     }
 
-    SECTION("Ensure capacity") {
-        arr.ensureCapacity(10);
-        REQUIRE(arr.getCapacity() == 10);
-        REQUIRE(arr.getSize() == 0);
+    SECTION("Ensure size") {
+        arr.resize(10);
+        REQUIRE(arr.getSize() == 10);
         
         arr.resize(5);
-        REQUIRE(arr.getSize() == 5);
+        REQUIRE(arr.getSize() == 10);
     }
 
     SECTION("Automatic expansion") {
         DynamicArray<int> small(1);
         small[0] = 42;
         small.resize(10);
-        REQUIRE(small.getCapacity() >= 10);
         REQUIRE(small[0] == 42);
     }
 }
