@@ -58,11 +58,11 @@ public:
         }
     };
 
-    SequenceIterator begin() const {
+    SequenceIterator const begin() const {
         return SequenceIterator(this, 0);
     }
 
-    SequenceIterator end() const {
+    SequenceIterator const  end() const {
         return SequenceIterator(this, getLength());
     }
 };

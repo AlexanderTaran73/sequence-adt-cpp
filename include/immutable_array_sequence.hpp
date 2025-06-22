@@ -6,35 +6,49 @@
 #include <functional>
 #include <stdexcept>
 #include <utility>
-#include <iterator>
 #include <algorithm>
 
 template <typename T>
 class ImmutableArraySequence : public Sequence<T> {
 private:
     DynamicArray<T>* items;
+    int length;
+
+    DynamicArray<T>* createWithCapacity(int capacity, int copyLength) const {
+        auto* newArray = new DynamicArray<T>(capacity);
+        for (int i = 0; i < copyLength; ++i) {
+            newArray->set(i, items->get(i));
+        }
+        return newArray;
+    }
 
 public:
-    ImmutableArraySequence() : items(new DynamicArray<T>(0)) {}
+    ImmutableArraySequence() : items(new DynamicArray<T>(1)), length(0) {}
 
     explicit ImmutableArraySequence(T* arr, int count)
-        : items(new DynamicArray<T>(arr, count)) {}
+        : items(new DynamicArray<T>(count)), length(count) {
+        for (int i = 0; i < count; ++i) {
+            items->set(i, arr[i]);
+        }
+    }
 
     explicit ImmutableArraySequence(const DynamicArray<T>& array)
-        : items(new DynamicArray<T>(array)) {}
+        : items(new DynamicArray<T>(array)), length(array.getSize()) {}
 
     ImmutableArraySequence(const ImmutableArraySequence<T>& other)
-        : items(new DynamicArray<T>(*other.items)) {}
+        : items(new DynamicArray<T>(*other.items)), length(other.length) {}
 
     ImmutableArraySequence(ImmutableArraySequence<T>&& other) noexcept
-        : items(other.items) {
+        : items(other.items), length(other.length) {
         other.items = nullptr;
+        other.length = 0;
     }
 
     ImmutableArraySequence<T>& operator=(const ImmutableArraySequence<T>& other) {
         if (this != &other) {
             delete items;
             items = new DynamicArray<T>(*other.items);
+            length = other.length;
         }
         return *this;
     }
@@ -43,7 +57,9 @@ public:
         if (this != &other) {
             delete items;
             items = other.items;
+            length = other.length;
             other.items = nullptr;
+            other.length = 0;
         }
         return *this;
     }
@@ -53,21 +69,22 @@ public:
     }
 
     T getFirst() const override {
-        if (getLength() == 0) throw Errors::emptyArray();
+        if (length == 0) throw Errors::emptyArray();
         return items->get(0);
     }
 
     T getLast() const override {
-        if (getLength() == 0) throw Errors::emptyArray();
-        return items->get(getLength() - 1);
+        if (length == 0) throw Errors::emptyArray();
+        return items->get(length - 1);
     }
 
     T get(int index) const override {
+        if (index < 0 || index >= length) throw Errors::indexOutOfRange();
         return items->get(index);
     }
 
     int getLength() const override {
-        return items->getSize();
+        return length;
     }
 
     T& operator[](int) override {
@@ -75,71 +92,88 @@ public:
     }
 
     const T& operator[](int index) const override {
+        if (index < 0 || index >= length) throw Errors::indexOutOfRange();
         return (*items)[index];
     }
 
     Sequence<T>* getSubsequence(int startIndex, int endIndex) const override {
-        auto* sub = items->getSubArray(startIndex, endIndex);
-        auto* result = new ImmutableArraySequence<T>(*sub);
-        delete sub;
-        return result;
+        if (startIndex < 0 || endIndex >= length || startIndex > endIndex)
+            throw Errors::invalidIndices();
+
+        int subLength = endIndex - startIndex + 1;
+        auto* subArray = new DynamicArray<T>(subLength);
+        for (int i = 0; i < subLength; ++i) {
+            subArray->set(i, items->get(startIndex + i));
+        }
+        return new ImmutableArraySequence<T>(*subArray);
     }
 
     Sequence<T>* append(T item) override {
-        int n = getLength();
-        DynamicArray<T> newArray(n + 1);
-        for (int i = 0; i < n; ++i)
-            newArray.set(i, items->get(i));
-        newArray.set(n, item);
-        return new ImmutableArraySequence<T>(newArray);
+        auto* newArray = createWithCapacity(length + 1, length);
+        newArray->set(length, item);
+        auto* result = new ImmutableArraySequence<T>(*newArray);
+        delete newArray;
+        return result;
     }
 
     Sequence<T>* prepend(T item) override {
-        int n = getLength();
-        DynamicArray<T> newArray(n + 1);
-        newArray.set(0, item);
-        for (int i = 0; i < n; ++i)
-            newArray.set(i + 1, items->get(i));
-        return new ImmutableArraySequence<T>(newArray);
+        auto* newArray = new DynamicArray<T>(length + 1);
+        newArray->set(0, item);
+        for (int i = 0; i < length; ++i) {
+            newArray->set(i + 1, items->get(i));
+        }
+        auto* result = new ImmutableArraySequence<T>(*newArray);
+        delete newArray;
+        return result;
     }
 
     Sequence<T>* insertAt(T item, int index) override {
-        if (index < 0 || index > getLength()) throw Errors::indexOutOfRange();
-        int n = getLength();
-        DynamicArray<T> newArray(n + 1);
-        for (int i = 0; i < index; ++i)
-            newArray.set(i, items->get(i));
-        newArray.set(index, item);
-        for (int i = index; i < n; ++i)
-            newArray.set(i + 1, items->get(i));
-        return new ImmutableArraySequence<T>(newArray);
+        if (index < 0 || index > length) throw Errors::indexOutOfRange();
+        
+        auto* newArray = new DynamicArray<T>(length + 1);
+        for (int i = 0; i < index; ++i) {
+            newArray->set(i, items->get(i));
+        }
+        newArray->set(index, item);
+        for (int i = index; i < length; ++i) {
+            newArray->set(i + 1, items->get(i));
+        }
+        auto* result = new ImmutableArraySequence<T>(*newArray);
+        delete newArray;
+        return result;
     }
 
     Sequence<T>* remove(int index) override {
-        if (getLength() == 0) throw Errors::emptyArray();
-        if (index < 0 || index >= getLength()) throw Errors::indexOutOfRange();
-        int n = getLength();
-        DynamicArray<T> newArray(n - 1);
-        for (int i = 0; i < index; ++i)
-            newArray.set(i, items->get(i));
-        for (int i = index + 1; i < n; ++i)
-            newArray.set(i - 1, items->get(i));
-        return new ImmutableArraySequence<T>(newArray);
+        if (length == 0) throw Errors::emptyArray();
+        if (index < 0 || index >= length) throw Errors::indexOutOfRange();
+        
+        auto* newArray = new DynamicArray<T>(length - 1);
+        for (int i = 0; i < index; ++i) {
+            newArray->set(i, items->get(i));
+        }
+        for (int i = index + 1; i < length; ++i) {
+            newArray->set(i - 1, items->get(i));
+        }
+        auto* result = new ImmutableArraySequence<T>(*newArray);
+        delete newArray;
+        return result;
     }
 
     Sequence<T>* concat(const Sequence<T>* other) const override {
         const auto* otherArray = dynamic_cast<const ImmutableArraySequence<T>*>(other);
         if (!otherArray) throw Errors::incompatibleTypes();
 
-        int totalSize = getLength() + otherArray->getLength();
-        DynamicArray<T> combined(totalSize);
+        int totalSize = length + otherArray->length;
+        auto* combined = new DynamicArray<T>(totalSize);
 
-        for (int i = 0; i < getLength(); ++i)
-            combined.set(i, get(i));
-        for (int j = 0; j < otherArray->getLength(); ++j)
-            combined.set(j + getLength(), otherArray->get(j));
+        for (int i = 0; i < length; ++i)
+            combined->set(i, get(i));
+        for (int j = 0; j < otherArray->length; ++j)
+            combined->set(j + length, otherArray->get(j));
 
-        return new ImmutableArraySequence<T>(combined);
+        auto* result = new ImmutableArraySequence<T>(*combined);
+        delete combined;
+        return result;
     }
 
     Sequence<T>* clone() const override {
@@ -147,42 +181,57 @@ public:
     }
 
     Sequence<T>* map(std::function<T(T)> f) const override {
-        DynamicArray<T> mapped(getLength());
-        for (int i = 0; i < getLength(); ++i)
-            mapped.set(i, f(get(i)));
-        return new ImmutableArraySequence<T>(mapped);
+        auto* mapped = new DynamicArray<T>(length);
+        for (int i = 0; i < length; ++i) {
+            mapped->set(i, f(get(i)));
+        }
+        auto* result = new ImmutableArraySequence<T>(*mapped);
+        delete mapped;
+        return result;
     }
 
     Sequence<T>* where(std::function<bool(T)> predicate) const override {
-        DynamicArray<T> filtered(getLength());
         int count = 0;
-        for (int i = 0; i < getLength(); ++i)
-            if (predicate(get(i)))
-                filtered.set(count++, get(i));
-        DynamicArray<T> result(count);
-        for (int i = 0; i < count; ++i)
-            result.set(i, filtered.get(i));
-        return new ImmutableArraySequence<T>(result);
+        
+        // Сначала подсчитываем количество подходящих элементов
+        for (int i = 0; i < length; ++i) {
+            if (predicate(get(i))) count++;
+        }
+        
+        auto* filtered = new DynamicArray<T>(count);
+        int index = 0;
+        for (int i = 0; i < length; ++i) {
+            if (predicate(get(i))) {
+                filtered->set(index++, get(i));
+            }
+        }
+        auto* result = new ImmutableArraySequence<T>(*filtered);
+        delete filtered;
+        return result;
     }
 
     T reduce(std::function<T(T, T)> reducer, T initial) const override {
         T acc = initial;
-        for (int i = 0; i < getLength(); ++i)
+        for (int i = 0; i < length; ++i) {
             acc = reducer(acc, get(i));
+        }
         return acc;
     }
 
     Sequence<T>* zip(const Sequence<T>* other, std::function<T(T, T)> combiner) const override {
-        int len = std::min(getLength(), other->getLength());
-        DynamicArray<T> result(len);
-        for (int i = 0; i < len; ++i)
-            result.set(i, combiner(get(i), other->get(i)));
-        return new ImmutableArraySequence<T>(result);
+        int len = std::min(length, other->getLength());
+        auto* resultArray = new DynamicArray<T>(len);
+        for (int i = 0; i < len; ++i) {
+            resultArray->set(i, combiner(get(i), other->get(i)));
+        }
+        auto* result = new ImmutableArraySequence<T>(*resultArray);
+        delete resultArray;
+        return result;
     }
 
     Sequence<T>* slice(int start, int end) const override {
         if (start < 0) start = 0;
-        if (end > getLength()) end = getLength();
+        if (end > length) end = length;
         if (start >= end) return new ImmutableArraySequence<T>();
         return getSubsequence(start, end - 1);
     }
