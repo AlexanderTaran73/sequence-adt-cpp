@@ -7,7 +7,7 @@
 #include <memory>
 
 template <typename T>
-class Queue {
+class Stack {
 private:
     MutableListSequence<T> sequence;
 
@@ -24,11 +24,11 @@ private:
     }
 
 public:
-    Queue() = default;
+    Stack() = default;
 
-    explicit Queue(const Sequence<T>* other) : sequence(convertSequence(other)) {}
+    explicit Stack(const Sequence<T>* other) : sequence(convertSequence(other)) {}
 
-    explicit Queue(Sequence<T>*&& other) noexcept {
+    explicit Stack(Sequence<T>*&& other) noexcept {
         if (auto derived = dynamic_cast<MutableListSequence<T>*>(other)) {
             sequence = std::move(*derived);
             delete other;
@@ -40,41 +40,41 @@ public:
         }
     }
 
-    Queue(const Queue<T>& other) = default;
-    Queue(Queue<T>&& other) noexcept = default;
+    Stack(const Stack<T>& other) = default;
+    Stack(Stack<T>&& other) noexcept = default;
 
-    Queue<T>& operator=(const Queue<T>& other) = default;
-    Queue<T>& operator=(Queue<T>&& other) noexcept = default;
+    Stack<T>& operator=(const Stack<T>& other) = default;
+    Stack<T>& operator=(Stack<T>&& other) noexcept = default;
 
-    void enqueue(const T& item) {
+    void push(const T& item) {
         sequence.append(item);
     }
-    
-    T dequeue() {
+
+    T pop() {
         if (isEmpty()) {
-            throw std::runtime_error("Queue is empty");
+            throw std::runtime_error("Stack is empty");
         }
-        T item = sequence.getFirst();
-        sequence.remove(0);
+        T item = sequence.getLast();
+        sequence.remove(sequence.getLength() - 1);
         return item;
     }
 
-    T& front() {
+    T& top() {
         if (isEmpty()) {
-            throw std::runtime_error("Queue is empty");
+            throw std::runtime_error("Stack is empty");
         }
-        return sequence[0];
+        return sequence[sequence.getLength() - 1];
+    }
+
+    const T& top() const {
+        if (isEmpty()) {
+            throw std::runtime_error("Stack is empty");
+        }
+        return sequence[sequence.getLength() - 1];
     }
 
     T get(int index) const {
         return sequence.get(index);
-    }
-
-    const T& front() const {
-        if (isEmpty()) {
-            throw std::runtime_error("Queue is empty");
-        }
-        return sequence[0];
     }
 
     int size() const {
@@ -87,32 +87,32 @@ public:
 
     void clear() {
         while (!isEmpty()) {
-            dequeue();
+            pop();
         }
     }
 
-    Queue<T> map(std::function<T(T)> f) const {
-        return Queue<T>(sequence.map(f));
+    Stack<T> map(std::function<T(T)> f) const {
+        return Stack<T>(sequence.map(f));
     }
 
-    Queue<T> where(std::function<bool(T)> predicate) const {
-        return Queue<T>(sequence.where(predicate));
+    Stack<T> where(std::function<bool(T)> predicate) const {
+        return Stack<T>(sequence.where(predicate));
     }
 
     T reduce(std::function<T(T, T)> reducer, T initial) const {
         return sequence.reduce(reducer, initial);
     }
 
-    Queue<T> concat(const Queue<T>& other) const {
+    Stack<T> concat(const Stack<T>& other) const {
         auto new_seq = sequence.clone();
         for (int i = 0; i < other.size(); ++i) {
             new_seq->append(other.sequence.get(i));
         }
-        return Queue<T>(new_seq);
+        return Stack<T>(new_seq);
     }
 
-    Queue<T> getSubsequence(int startIndex, int endIndex) const {
-        return Queue<T>(sequence.getSubsequence(startIndex, endIndex));
+    Stack<T> getSubsequence(int startIndex, int endIndex) const {
+        return Stack<T>(sequence.getSubsequence(startIndex, endIndex));
     }
 
     bool contains(const T& item) const {
@@ -124,7 +124,7 @@ public:
         return false;
     }
 
-    bool containsSubsequence(const Queue<T>& sub) const {
+    bool containsSubsequence(const Stack<T>& sub) const {
         if (sub.isEmpty()) return true;
         if (size() < sub.size()) return false;
 
@@ -142,29 +142,29 @@ public:
     }
 
     template <typename U>
-    Queue<std::pair<T, U>> zip(const Queue<U>& other) const {
-        Queue<std::pair<T, U>> result;
+    Stack<std::pair<T, U>> zip(const Stack<U>& other) const {
+        Stack<std::pair<T, U>> result;
         int minSize = std::min(size(), other.size());
         for (int i = 0; i < minSize; ++i) {
-            result.enqueue(std::make_pair(get(i), other.get(i)));
+            result.push(std::make_pair(get(i), other.get(i)));
         }
         return result;
     }
 
-    std::pair<Queue<T>, Queue<T>> split(std::function<bool(T)> predicate) const {
-        Queue<T> left, right;
+    std::pair<Stack<T>, Stack<T>> split(std::function<bool(T)> predicate) const {
+        Stack<T> left, right;
         for (int i = 0; i < sequence.getLength(); ++i) {
             T item = sequence.get(i);
             if (predicate(item)) {
-                left.enqueue(item);
+                left.push(item);
             } else {
-                right.enqueue(item);
+                right.push(item);
             }
         }
         return {left, right};
     }
 
-    bool operator==(const Queue<T>& other) const {
+    bool operator==(const Stack<T>& other) const {
         if (size() != other.size()) return false;
         for (int i = 0; i < size(); ++i) {
             if (sequence.get(i) != other.sequence.get(i)) {
@@ -174,7 +174,7 @@ public:
         return true;
     }
 
-    bool operator!=(const Queue<T>& other) const {
+    bool operator!=(const Stack<T>& other) const {
         return !(*this == other);
     }
 };

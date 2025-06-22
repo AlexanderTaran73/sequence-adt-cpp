@@ -10,6 +10,7 @@
 #include "mutable_list_sequence.hpp"
 #include "immutable_list_sequence.hpp"
 #include "queue.hpp"
+#include "stack.hpp"
 
 bool safeReadInt(int& val) {
     std::string line;
@@ -428,6 +429,158 @@ private:
 };
 
 template <typename T>
+class StackCLI {
+private:
+    Stack<T> stack;
+
+public:
+    void show() const {
+        std::cout << "Stack (top to bottom): [ ";
+        // Для стека выводим элементы в обратном порядке
+        for (int i = stack.size() - 1; i >= 0; --i) {
+            std::cout << stack.get(i) << ", ";
+        }
+        std::cout << "]\n";
+    }
+
+    void push() {
+        T value;
+        std::cout << "Enter value to push: ";
+        if (!readValue(value)) {
+            std::cout << "Invalid input format for value.\n";
+            return;
+        }
+        stack.push(value);
+    }
+
+    void pop() {
+        try {
+            T val = stack.pop();
+            std::cout << "Popped value: " << val << "\n";
+        } catch (const std::runtime_error& e) {
+            std::cout << "Error: " << e.what() << "\n";
+        }
+    }
+
+    void top() const {
+        try {
+            std::cout << "Top element: " << stack.top() << "\n";
+        } catch (const std::runtime_error& e) {
+            std::cout << "Error: " << e.what() << "\n";
+        }
+    }
+
+    void size() const {
+        std::cout << "Size: " << stack.size() << "\n";
+    }
+
+    void isEmpty() const {
+        std::cout << "Stack is " << (stack.isEmpty() ? "empty" : "not empty") << "\n";
+    }
+
+    void clear() {
+        stack.clear();
+        std::cout << "Stack cleared\n";
+    }
+
+    void map() const {
+        if constexpr (std::is_same_v<T, int>) {
+            auto mapped = stack.map([](T x) { return x * 2; });
+            StackCLI<T> cli;
+            cli.stack = mapped;
+            std::cout << "Mapped (x * 2): ";
+            cli.show();
+        } else if constexpr (std::is_same_v<T, double>) {
+            auto mapped = stack.map([](T x) { return x * 1.5; });
+            StackCLI<T> cli;
+            cli.stack = mapped;
+            std::cout << "Mapped (x * 1.5): ";
+            cli.show();
+        } else {
+            std::cout << "Map not supported for this type\n";
+        }
+    }
+
+    void where() const {
+        if constexpr (std::is_same_v<T, int>) {
+            auto filtered = stack.where([](T x) { return x % 2 == 0; });
+            StackCLI<T> cli;
+            cli.stack = filtered;
+            std::cout << "Filtered (even): ";
+            cli.show();
+        } else if constexpr (std::is_same_v<T, double>) {
+            auto filtered = stack.where([](T x) { return x > 0; });
+            StackCLI<T> cli;
+            cli.stack = filtered;
+            std::cout << "Filtered (x > 0): ";
+            cli.show();
+        } else {
+            std::cout << "Where not supported for this type\n";
+        }
+    }
+
+    void reduce() const {
+        if constexpr (std::is_same_v<T, int>) {
+            auto result = stack.reduce([](int a, int b) { return a + b; }, 0);
+            std::cout << "Reduced sum: " << result << "\n";
+        } else if constexpr (std::is_same_v<T, double>) {
+            auto result = stack.reduce([](double a, double b) { return a + b; }, 0.0);
+            std::cout << "Reduced sum: " << result << "\n";
+        } else {
+            std::cout << "Reduce not supported for this type\n";
+        }
+    }
+
+    void run() {
+        while (true) {
+            std::cout << "\n==== Stack CLI Menu ====\n";
+            std::cout << "1. Show stack\n";
+            std::cout << "2. Push\n";
+            std::cout << "3. Pop\n";
+            std::cout << "4. Top element\n";
+            std::cout << "5. Size\n";
+            std::cout << "6. Check empty\n";
+            std::cout << "7. Clear\n";
+            std::cout << "8. Map\n";
+            std::cout << "9. Where\n";
+            std::cout << "10. Reduce\n";
+            std::cout << "0. Exit to main menu\n";
+            std::cout << "Choose option: ";
+
+            int option;
+            if (!safeReadInt(option)) {
+                std::cout << "Invalid input\n";
+                continue;
+            }
+
+            try {
+                switch (option) {
+                    case 1: show(); break;
+                    case 2: push(); break;
+                    case 3: pop(); break;
+                    case 4: top(); break;
+                    case 5: size(); break;
+                    case 6: isEmpty(); break;
+                    case 7: clear(); break;
+                    case 8: map(); break;
+                    case 9: where(); break;
+                    case 10: reduce(); break;
+                    case 0: return;
+                    default: std::cout << "Invalid option\n";
+                }
+            } catch (const std::exception& e) {
+                std::cout << "[Error] " << e.what() << "\n";
+            }
+        }
+    }
+
+private:
+    bool readValue(int& v) { return safeReadInt(v); }
+    bool readValue(double& v) { return safeReadDouble(v); }
+    bool readValue(std::string& v) { safeReadString(v); return !v.empty(); }
+};
+
+template <typename T>
 void runSequenceCLI(int implChoice) {
     Sequence<T>* seq = nullptr;
     switch (implChoice) {
@@ -449,11 +602,18 @@ void runQueueCLI() {
     cli.run();
 }
 
+template <typename T>
+void runStackCLI() {
+    StackCLI<T> cli;
+    cli.run();
+}
+
 int main() {
     while (true) {
         std::cout << "\n==== Main Menu ====\n";
         std::cout << "1. Work with Sequence\n";
         std::cout << "2. Work with Queue\n";
+        std::cout << "3. Work with Stack\n";
         std::cout << "0. Exit\n";
         std::cout << "Your choice: ";
 
@@ -474,29 +634,41 @@ int main() {
             continue;
         }
 
-        if (mainChoice == 1) {
-            std::cout << "\nChoose sequence implementation:\n";
-            std::cout << "1. MutableArraySequence\n2. ImmutableArraySequence\n";
-            std::cout << "3. MutableListSequence\n4. ImmutableListSequence\n";
-            std::cout << "Your choice: ";
-            int implChoice;
-            if (!safeReadInt(implChoice) || implChoice < 1 || implChoice > 4) {
-                std::cout << "Invalid implementation choice\n";
-                continue;
-            }
+        switch (mainChoice) {
+            case 1: {
+                std::cout << "\nChoose sequence implementation:\n";
+                std::cout << "1. MutableArraySequence\n2. ImmutableArraySequence\n";
+                std::cout << "3. MutableListSequence\n4. ImmutableListSequence\n";
+                std::cout << "Your choice: ";
+                int implChoice;
+                if (!safeReadInt(implChoice) || implChoice < 1 || implChoice > 4) {
+                    std::cout << "Invalid implementation choice\n";
+                    continue;
+                }
 
-            switch (typeChoice) {
-                case 1: runSequenceCLI<int>(implChoice); break;
-                case 2: runSequenceCLI<double>(implChoice); break;
-                case 3: runSequenceCLI<std::string>(implChoice); break;
+                switch (typeChoice) {
+                    case 1: runSequenceCLI<int>(implChoice); break;
+                    case 2: runSequenceCLI<double>(implChoice); break;
+                    case 3: runSequenceCLI<std::string>(implChoice); break;
+                }
+                break;
             }
-        }
-        else if (mainChoice == 2) {
-            switch (typeChoice) {
-                case 1: runQueueCLI<int>(); break;
-                case 2: runQueueCLI<double>(); break;
-                case 3: runQueueCLI<std::string>(); break;
-            }
+            case 2:
+                switch (typeChoice) {
+                    case 1: runQueueCLI<int>(); break;
+                    case 2: runQueueCLI<double>(); break;
+                    case 3: runQueueCLI<std::string>(); break;
+                }
+                break;
+            case 3:
+                switch (typeChoice) {
+                    case 1: runStackCLI<int>(); break;
+                    case 2: runStackCLI<double>(); break;
+                    case 3: runStackCLI<std::string>(); break;
+                }
+                break;
+            default:
+                std::cout << "Invalid option\n";
         }
     }
 
